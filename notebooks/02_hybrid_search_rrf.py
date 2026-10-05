@@ -201,8 +201,8 @@ for t in ("exact", "paraphrase", "mixed"):
 #   ở đây, khác với kỳ vọng sách giáo khoa. Lý do: `bge-small-en-v1.5` là model tiếng
 #   Anh, gần như không hiểu paraphrase tiếng Việt; BM25 còn bắt được vài từ trùng.
 #   Hybrid vẫn gần BM25 vì RRF chỉ cộng thứ hạng, một retriever yếu không kéo tụt nhiều.
-#   Đây là chỗ cần đổi sang `bge-m3` (EMBEDDING_BACKEND) — một quyết định về model,
-#   không phải về thuật toán fusion.
+#   Đây là chỗ cần đổi sang model đa ngôn ngữ (EMBEDDING_BACKEND) — một quyết định
+#   về model, không phải về thuật toán fusion. **§6 kiểm chứng điều này bằng số.**
 
 # %% [markdown]
 # ## 6. Thí nghiệm thêm — đổi sang embedding đa ngôn ngữ
@@ -264,6 +264,32 @@ else:
         m = lambda xs: statistics.mean(xs[i] for i in idx)  # noqa: E731
         print(f"  {t:12} {len(idx):>3}  {m(p_kw):>6.1%} | {m(p_sem):>6.1%} {m(p_hyb):>6.1%}"
               f"              | {m(p_sem_ml):>6.1%} {m(p_hyb_ml):>6.1%}")
+
+# %% [markdown]
+# ### Phân tích của học viên — §6
+#
+# | slice | BM25 | vector bge-small | **vector e5-large** | hybrid e5-large |
+# |---|---:|---:|---:|---:|
+# | `exact` | 96,7% | 88,7% | 99,3% | **100%** |
+# | `paraphrase` | 33,3% | 24,0% | **75,3%** | 60,0% |
+# | `mixed` | 97,0% | 98,5% | **99,5%** | 97,5% |
+# | tổng | 77,8% | 73,2% | **92,2%** | 87,0% |
+#
+# 1. **Giả thuyết đúng.** Chỉ đổi embedding, vector ở `paraphrase` tăng từ 24,0% lên
+#    **75,3%** (gấp ~3×) và thắng BM25 hơn 40 điểm — đúng thứ tự rubric mong đợi
+#    (vector thắng `paraphrase`). Kết quả kém ở §5 là do chọn model, không phải do
+#    vector search.
+# 2. **Hybrid không phải lúc nào cũng thắng.** Với e5-large, hybrid (87,0%) **thua**
+#    vector thuần (92,2%), thua rõ nhất ở `paraphrase` (60,0% so với 75,3%). RRF cho
+#    hai retriever trọng số ngang nhau; khi BM25 chỉ đúng 33% ở loại query này, nó
+#    kéo các doc sai lên ngang hàng với doc đúng của vector. Hybrid giúp khi hai
+#    retriever *mạnh ngang nhau và sai ở chỗ khác nhau* (bge-small: hybrid thắng cả
+#    hai); khi một bên áp đảo, cộng thêm bên yếu là cộng thêm nhiễu.
+# 3. **Hệ quả thực tế:** đổi embedding model thì phải **đo lại** cả quyết định fusion.
+#    Hướng xử lý tiếp theo là weighted RRF (giảm trọng số BM25) hoặc chỉ gọi BM25 cho
+#    query có mã/thuật ngữ chính xác — không phải mặc định hybrid cho mọi query.
+# 4. **Chi phí:** e5-large mất ~5 phút để index 1000 doc trên CPU (bge-small: vài giây),
+#    vector 1024d thay vì 384d (RAM gấp ~2,7×), model 2,2 GB thay vì ~70 MB.
 
 # %% [markdown]
 # ## Deliverable evidence

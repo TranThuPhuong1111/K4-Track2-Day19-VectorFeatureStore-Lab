@@ -15,10 +15,10 @@
 Precision@10 trung bình: hybrid 78,6% > BM25 77,8% > vector 73,2%.
 
 - **exact** — BM25 96,7% = hybrid 96,7% > vector 88,7%: query chứa thuật ngữ verbatim ("PostgreSQL replication sharding") nên khớp từ khoá là đủ.
-- **paraphrase** — BM25 33,3% > hybrid 32,0% > vector 24,0%: vector *không* thắng như lý thuyết, vì `bge-small-en` là model tiếng Anh, hiểu kém paraphrase tiếng Việt. Đây là vấn đề chọn model (cần `bge-m3`), không phải vấn đề fusion.
+- **paraphrase** — với `bge-small-en` (model tiếng Anh) vector chỉ 24,0%, thua BM25 33,3%. Đổi sang `multilingual-e5-large` (NB2 §6), vector lên **75,3%** và thắng rõ: lỗi nằm ở model, không ở vector search.
 - **mixed** — hybrid 100% > vector 98,5% > BM25 97,0%: hai retriever sai ở các doc khác nhau, RRF giữ doc cả hai cùng đồng ý.
 
-**Khi không dùng hybrid:** tra cứu mã/ID/thuật ngữ chính xác (mã lỗi, SKU, tên hàm) → BM25 thuần, nhanh hơn ~10× (P99 3,4 ms so với 19,7 ms) mà chất lượng ngang nhau. Corpus đa ngôn ngữ hoặc query toàn paraphrase với một embedding model mạnh → vector thuần, vì BM25 chỉ thêm nhiễu. Khi ngân sách latency rất chặt thì cũng bỏ hybrid, vì nó phải chạy cả hai retriever.
+**Khi không dùng hybrid:** tra cứu mã/ID chính xác (mã lỗi, SKU) → BM25 thuần, nhanh hơn ~6× (P99 3,4 so với 19,7 ms) mà chất lượng ngang nhau. Khi embedding đã mạnh và query chủ yếu là paraphrase → vector thuần: với e5-large, hybrid (87,0%) **thua** vector (92,2%) vì RRF cho BM25 yếu trọng số ngang bằng.
 
 ---
 
