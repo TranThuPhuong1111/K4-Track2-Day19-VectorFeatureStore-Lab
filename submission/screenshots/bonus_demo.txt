@@ -1,0 +1,44 @@
+Feast online store: connected
+Remembered 7 notes for u_001, 1 note for u_002
+
+=== Query 1 · vector hit: 'Tôi đã đọc gì về Kubernetes?'
+[user u_001] language=vi · reading_speed=187wpm · topic_affinity=cloud
+Recent activity: 11 queries/hour (Feast, batch) · this session: [] (push buffer)
+Top memories:
+  1. (cloud) Đã đọc: Kubernetes Pod lifecycle. Pod đi qua các pha Pending, Running, Succeeded, Failed. Liveness probe restart container khi treo, readiness probe gỡ Pod khỏi Service.
+  2. (cloud) Đã đọc: tối ưu chi phí AWS bằng spot instance cho batch job, savings plan cho workload ổn định.
+  3. (security) Đã đọc: zero-trust network — mọi request đều phải xác thực, kể cả trong VPC nội bộ. 
+
+=== Query 2 · cần profile: 'Recommend đọc gì tiếp'
+[user u_001] language=vi · reading_speed=187wpm · topic_affinity=cloud
+Recent activity: 11 queries/hour (Feast, batch) · this session: ['Tôi đã đọc gì về Kubernetes?'] (push buffer)
+Top memories:
+  1. (cloud) Đã đọc: tối ưu chi phí AWS bằng spot instance cho batch job, savings plan cho workload ổn định.
+  2. (cloud) Đã đọc: Kubernetes Pod lifecycle. Pod đi qua các pha Pending, Running, Succeeded, Failed. Liveness probe restart container khi treo, readiness probe gỡ Pod khỏi Service.
+  3. (database) Đã đọc: PostgreSQL index B-tree vs GIN, khi nào dùng partial index. 
+
+=== Query 3 · cần fresh activity: 'Tôi đang quan tâm gì gần đây?'
+[user u_001] language=vi · reading_speed=187wpm · topic_affinity=cloud
+Recent activity: 11 queries/hour (Feast, batch) · this session: ['Tôi đã đọc gì về Kubernetes?', 'Recommend đọc gì tiếp'] (push buffer)
+Top memories:
+  1. (cloud) Đã đọc: tối ưu chi phí AWS bằng spot instance cho batch job, savings plan cho workload ổn định.
+  2. (cloud) Đã đọc: Kubernetes Pod lifecycle. Pod đi qua các pha Pending, Running, Succeeded, Failed. Liveness probe restart container khi treo, readiness probe gỡ Pod khỏi Service.
+  3. (security) Đã đọc: zero-trust network — mọi request đều phải xác thực, kể cả trong VPC nội bộ. 
+
+=== Query 4 · paraphrase: 'Tài liệu về tự động mở rộng hạ tầng?'
+[user u_001] language=vi · reading_speed=187wpm · topic_affinity=cloud
+Recent activity: 11 queries/hour (Feast, batch) · this session: ['Tôi đã đọc gì về Kubernetes?', 'Recommend đọc gì tiếp', 'Tôi đang quan tâm gì gần đây?'] (push buffer)
+Top memories:
+  1. (-) Ghi chú: Horizontal Pod Autoscaler tăng số replica khi CPU vượt 70%. Kết hợp cluster autoscaler để hạ tầng co giãn theo lưu lượng người dùng.
+  2. (-) Ghi chú: RAG với hybrid search BM25 + vector, RRF k=60, rank tính từ 1.
+  3. (cloud) Đã đọc: tối ưu chi phí AWS bằng spot instance cho batch job, savings plan cho workload ổn định. 
+
+=== Query 5 · mixed + profile: 'Cho tôi summary cloud security'
+[user u_001] language=vi · reading_speed=187wpm · topic_affinity=cloud
+Recent activity: 11 queries/hour (Feast, batch) · this session: ['Tôi đã đọc gì về Kubernetes?', 'Recommend đọc gì tiếp', 'Tôi đang quan tâm gì gần đây?', 'Tài liệu về tự động mở rộng hạ tầng?'] (push buffer)
+Top memories:
+  1. (security) Ghi chú họp: cloud security cần IAM least privilege, bật mã hoá S3 at rest bằng KMS, và audit CloudTrail hàng tuần. Không để access key trong code.
+  2. (cloud) Đã đọc: tối ưu chi phí AWS bằng spot instance cho batch job, savings plan cho workload ổn định.
+  3. (cloud) Đã đọc: Kubernetes Pod lifecycle. Pod đi qua các pha Pending, Running, Succeeded, Failed. Liveness probe restart container khi treo, readiness probe gỡ Pod khỏi Service. 
+
+Isolation check passed — u_002's memory never appeared in u_001's context.

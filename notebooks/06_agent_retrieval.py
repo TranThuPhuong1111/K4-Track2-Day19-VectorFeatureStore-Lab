@@ -123,6 +123,26 @@ print(f"\nΔ recall vs single-shot:  tách câu {split - base:+.3f}   tách + fi
 # NB5 lặp lại ở tầng agent: **filter không miễn phí, phải đo chứ đừng đoán.**
 
 # %% [markdown]
+# ### Phân tích của học viên (số đo trên máy mình)
+#
+# | strategy | recall | balance | calls |
+# |---|---:|---:|---:|
+# | single-shot | 0.526 | 0.08 | 1.0 |
+# | agentic (no filter) | **0.906** | **0.93** | 2.3 |
+# | agentic (+filter) | 0.823 | 0.76 | 2.3 |
+#
+# **Vì sao agentic (+filter) thấp hơn agentic (no filter)?** Cả hai cùng tách câu
+# và cùng ngân sách 16 doc, nên khác biệt chỉ đến từ filter `topic` được *đoán*
+# bằng keyword (`TOPIC_HINTS`). Filter là ràng buộc **cứng**: một khi đoán sai hoặc
+# đoán quá hẹp, document liên quan ở cụm bên cạnh bị loại khỏi tập ứng viên trước
+# khi vector có cơ hội xếp hạng nó. Ví dụ "tối ưu chi phí" xuất hiện cả ở `cloud`
+# (spot instance) lẫn `ai_ml` (chi phí inference) — khoá vào một topic là mất vế kia.
+# Reflection không cứu được trường hợp này, vì nó chỉ nới filter khi kết quả trả về
+# **ít hơn** `min_evidence`; filter sai-nhưng-không-rỗng vẫn trả đủ 8 doc (sai) nên
+# agent không biết mình sai. Bài học giống NB5: filter đổi recall lấy precision, và
+# chỉ đáng bật khi tín hiệu filter đáng tin (ví dụ topic do user chọn, không phải đoán).
+
+# %% [markdown]
 # ## 4. Reflection: filter tồi còn tệ hơn không filter
 #
 # `Agent` thử lại **một lần** với filter được nới ra khi một call trả về quá ít

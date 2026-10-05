@@ -17,6 +17,7 @@
 import _setup  # noqa: F401
 import statistics
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -30,13 +31,17 @@ import httpx
 
 # %%
 ROOT = Path(_setup.__file__).resolve().parent.parent
+# `python -m uvicorn` (not the `uvicorn` launcher): on Windows the launcher .exe
+# spawns a child python, so proc.terminate() would orphan the real server.
 proc = subprocess.Popen(
-    ["uvicorn", "app.main:app", "--port", "8000", "--log-level", "warning"],
+    [sys.executable, "-m", "uvicorn", "app.main:app", "--port", "8000", "--log-level", "warning"],
     cwd=str(ROOT),
 )
 
 # Đợi server up + warm (Searcher.from_corpus loads embeddings + indexes 1000 docs)
-URL = "http://localhost:8000"
+# 127.0.0.1, not "localhost": on Windows localhost tries IPv6 ::1 first and only
+# falls back to IPv4 (where uvicorn listens) after ~2 s — per request.
+URL = "http://127.0.0.1:8000"
 for _ in range(60):
     try:
         r = httpx.get(f"{URL}/healthz", timeout=2.0)

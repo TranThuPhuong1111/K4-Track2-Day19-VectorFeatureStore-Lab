@@ -1,0 +1,23 @@
+Day 19 benchmark — keyword vs semantic vs hybrid
+==============================================================
+  Loaded 50 golden queries
+  Building Searcher (this may take ~30s on first run — embedding the corpus)...
+  Indexed 1000 docs in 65.6s
+
+Quality — Precision@10 (% of top-10 in matching topic)
+  Keyword (BM25)   :  77.8%
+  Semantic (vector):  73.2%
+  Hybrid  (RRF=60) :  78.6%   <- should win
+
+Quality by query type:
+  type           n       kw     sem     hyb
+  exact         15   96.7%  88.7%  96.7%
+  paraphrase    15   33.3%  24.0%  32.0%
+  mixed         20   97.0%  98.5% 100.0%
+
+Latency — P50 / P95 / P99 over 5000 calls/mode
+  keyword  : P50=   1.2ms  P95=   3.3ms  P99=   4.5ms
+  semantic : P50=  11.3ms  P95=  15.5ms  P99=  19.7ms
+  hybrid   : P50=  14.1ms  P95=  19.2ms  P99=  23.4ms
+
+PASS — hybrid beats keyword by +0.8pp, semantic by +5.4pp

@@ -190,6 +190,82 @@ for t in ("exact", "paraphrase", "mixed"):
 # production luôn default hybrid (deck §3, slide "Hybrid Search Mechanics").
 
 # %% [markdown]
+# ### Phân tích của học viên (số đo trên máy mình)
+#
+# Trung bình: hybrid **78,6%** > BM25 77,8% > vector 73,2%. Theo slice:
+#
+# - `exact`: BM25 96,7% = hybrid 96,7% > vector 88,7% — đúng kỳ vọng, BM25 đã đủ mạnh.
+# - `mixed`: hybrid **100%** > vector 98,5% > BM25 97,0% — hai retriever sai ở *các
+#   doc khác nhau*, RRF giữ lại doc được cả hai đồng ý.
+# - `paraphrase`: BM25 33,3% > hybrid 32,0% > vector 24,0% — **vector không thắng**
+#   ở đây, khác với kỳ vọng sách giáo khoa. Lý do: `bge-small-en-v1.5` là model tiếng
+#   Anh, gần như không hiểu paraphrase tiếng Việt; BM25 còn bắt được vài từ trùng.
+#   Hybrid vẫn gần BM25 vì RRF chỉ cộng thứ hạng, một retriever yếu không kéo tụt nhiều.
+#   Đây là chỗ cần đổi sang `bge-m3` (EMBEDDING_BACKEND) — một quyết định về model,
+#   không phải về thuật toán fusion.
+
+# %% [markdown]
+# ## 6. Thí nghiệm thêm — đổi sang embedding đa ngôn ngữ
+#
+# Giả thuyết ở §5: vector thua ở `paraphrase` vì **model**, không phải vì vector search.
+# Kiểm chứng bằng cách giữ nguyên BM25, golden set và RRF, chỉ đổi embedding sang
+# `intfloat/multilingual-e5-large` (1024d, ~100 ngôn ngữ, chạy bằng fastembed — cùng
+# model với `EMBEDDING_BACKEND=multilingual`). e5 **bắt buộc** prefix `query: ` /
+# `passage: `; fastembed không tự thêm nên phải thêm tay — quên prefix là một lỗi
+# im lặng làm tụt chất lượng.
+#
+# > Model nặng ~2,2 GB nên section này chỉ chạy khi `LAB19_MULTILINGUAL=1`; mặc định
+# > bỏ qua để chạy lại notebook không bị buộc tải model. Output dưới đây là từ lần
+# > chạy có bật biến này.
+
+# %%
+import os
+import time
+
+if os.getenv("LAB19_MULTILINGUAL") != "1":
+    print("Bỏ qua §6 — đặt LAB19_MULTILINGUAL=1 để chạy (tải ~2,2 GB lần đầu).")
+else:
+    ML_COLLECTION = "lab19_e5"
+    ml_embedder = TextEmbedding(model_name="intfloat/multilingual-e5-large")
+    client.create_collection(
+        collection_name=ML_COLLECTION,
+        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+    )
+    t0 = time.perf_counter()
+    passages = [f"passage: {d['title']} {d['text']}" for d in docs]
+    ml_vectors = list(ml_embedder.embed(passages, batch_size=32))
+    client.upsert(collection_name=ML_COLLECTION, points=[
+        PointStruct(id=i, vector=v.tolist(), payload={"doc_id": d["doc_id"]})
+        for i, (d, v) in enumerate(zip(docs, ml_vectors))
+    ])
+    print(f"e5-large: indexed {len(docs)} docs in {time.perf_counter() - t0:.0f}s")
+
+    def search_semantic_ml(query: str, top_k: int = TOP_K) -> list[str]:
+        q_vec = next(ml_embedder.embed([f"query: {query}"])).tolist()
+        res = client.query_points(collection_name=ML_COLLECTION, query=q_vec, limit=top_k)
+        return [p.payload["doc_id"] for p in res.points]
+
+    def search_hybrid_ml(query: str, top_k: int = TOP_K, rrf_k: int = RRF_K) -> list[str]:
+        # Same RRF as §3 (rank 1-based, k=60); only the dense retriever changed.
+        depth = max(top_k * 5, 50)
+        rrf: dict[str, float] = {}
+        for ranking in (search_keyword(query, depth), search_semantic_ml(query, depth)):
+            for rank, doc_id in enumerate(ranking, start=1):
+                rrf[doc_id] = rrf.get(doc_id, 0.0) + 1.0 / (rrf_k + rank)
+        return [doc_id for doc_id, _ in sorted(rrf.items(), key=lambda kv: -kv[1])[:top_k]]
+
+    p_sem_ml = [precision_at_10(search_semantic_ml(q["query"]), q["topic"]) for q in golden]
+    p_hyb_ml = [precision_at_10(search_hybrid_ml(q["query"]), q["topic"]) for q in golden]
+
+    print(f"\n  {'type':12} {'n':>3}  {'kw':>7} | {'sem':>7} {'hyb':>7}  (bge-small) | "
+          f"{'sem':>7} {'hyb':>7}  (e5-large)")
+    for t in ("exact", "paraphrase", "mixed", "ALL"):
+        idx = [i for i, q in enumerate(golden) if t == "ALL" or q["mode_hint"] == t]
+        m = lambda xs: statistics.mean(xs[i] for i in idx)  # noqa: E731
+        print(f"  {t:12} {len(idx):>3}  {m(p_kw):>6.1%} | {m(p_sem):>6.1%} {m(p_hyb):>6.1%}"
+              f"              | {m(p_sem_ml):>6.1%} {m(p_hyb_ml):>6.1%}")
+
+# %% [markdown]
 # ## Deliverable evidence
 #
 # 1. Output cell 4: bảng Precision@10 với 3 mode, hybrid > kw và > sem.

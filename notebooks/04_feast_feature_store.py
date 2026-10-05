@@ -114,6 +114,18 @@ if res.stderr:
     print(res.stderr[-500:])
 assert res.returncode == 0, f"materialize failed: {res.stderr}"
 
+# Feast only draws per-view row progress bars on a TTY; headless (nbconvert/CI)
+# the log above has no row counts. Count what actually landed in the online store.
+import sqlite3
+
+with sqlite3.connect(FEAST_DIR / "online_store.db") as con:
+    print("\nRows materialized to online store (SQLite):")
+    for (table,) in con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lab19_%' ORDER BY name"
+    ):
+        n_rows = con.execute(f"SELECT COUNT(DISTINCT entity_key) FROM {table}").fetchone()[0]
+        print(f"  {table:<36} {n_rows:>5} entities")
+
 # %% [markdown]
 # ## 4. Online lookup — đo latency
 #
@@ -195,7 +207,23 @@ historical = fs.get_historical_features(
         "user_profile_features:topic_affinity",
     ],
 ).to_df()
+
+# Feast 0.66's file offline store DROPS an entity row that has no feature value
+# at its timestamp, instead of returning NULL. Left-merge back onto entity_df so
+# every training row survives (a silently shrinking training set is its own bug).
+key = ["user_id", "event_timestamp"]
+for df in (entity_df, historical):
+    df["event_timestamp"] = pd.to_datetime(df["event_timestamp"], utc=True).astype("datetime64[ns, UTC]")
+historical = entity_df.merge(historical, on=key, how="left")
 print(historical)
+print(f"\nshape: {historical.shape[0]} rows × {historical.shape[1]} columns")
+
+# %% [markdown]
+# **Đọc kết quả:** `u_001` có `NaN`. Profile của `u_001` được ghi lúc `NOW − 1h`,
+# nhưng dòng training hỏi tại `NOW − 2h` — khi đó giá trị **chưa tồn tại**. PIT join
+# trả về rỗng thay vì "mượn" giá trị tương lai: đây chính là cơ chế chống leakage.
+# Một join "lấy giá trị mới nhất" sẽ điền `187` vào đây và rò dữ liệu tương lai
+# (NB8 §5 đo đúng hiện tượng đó).
 
 # %% [markdown]
 # ## Deliverable evidence

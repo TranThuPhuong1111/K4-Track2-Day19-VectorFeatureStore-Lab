@@ -116,6 +116,27 @@ for th in (0.60, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95):
 # > hằng số để copy. Phân bố query của bạn quyết định con số cuối cùng.
 
 # %% [markdown]
+# ### Phân tích của học viên — chọn ngưỡng **0,85**
+#
+# Số đo trên máy mình: ở **0,75** tiết kiệm 100% nhưng **36%** probe "đáng lẽ MISS"
+# lại HIT — tức hơn một phần ba câu trả lời từ cache là của câu hỏi khác. 0,80 kéo
+# xuống 5%, **0,85 về 0%** mà vẫn giữ 100% tiết kiệm; 0,90 bắt đầu mất 4% tiết kiệm,
+# 0,95 mất gần một nửa.
+#
+# **Vì sao 0,75 chưa đủ cho corpus này:** (1) các câu hỏi rất **ngắn** (nhiều câu
+# chỉ là 3–5 thuật ngữ, ví dụ "OAuth JWT zero-trust"), nên phần vỏ người dùng thêm vào
+# — "cho tôi hỏi …", "… thì làm thế nào" — chiếm phần lớn embedding; hai câu hỏi
+# *khác chủ đề* nhưng *cùng vỏ* trở nên gần nhau. (2) `bge-small-en` là model tiếng
+# Anh, nhìn phần tiếng Việt chủ yếu qua hình thái bề mặt, nên khả năng tách ý kém và
+# điểm cosine của các câu không liên quan dồn lên vùng 0,75–0,80. Con số 0,75 của AWS
+# được đo trên query tiếng Anh thật, dài và đa dạng hơn — không chuyển nguyên sang đây.
+#
+# Chọn **0,85** thay vì 0,80: trả lời sai là lỗi *im lặng* và đắt (người dùng tin câu
+# trả lời), còn cache miss chỉ tốn thêm một lần gọi LLM. Với cùng mức tiết kiệm, mình
+# ưu tiên biên an toàn. Nếu đổi sang `bge-m3`, phải **xoá cache và sweep lại** — phân
+# bố điểm sẽ khác hẳn.
+
+# %% [markdown]
 # ## 3. TTL: câu trả lời cũ không tự biết mình cũ
 #
 # `SemanticCache` dùng **đồng hồ ảo** (`advance()`) nên ta test được TTL mà không

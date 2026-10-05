@@ -1,0 +1,4 @@
+NAME                      ENTITIES    TYPE         ENABLED    STATE
+query_velocity_features   {'user'}    FeatureView  Yes        AVAILABLE_ONLINE
+item_popularity_features  {'item'}    FeatureView  Yes        AVAILABLE_ONLINE
+user_profile_features     {'user'}    FeatureView  Yes        AVAILABLE_ONLINE
